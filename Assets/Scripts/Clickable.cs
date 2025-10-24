@@ -13,13 +13,30 @@ public class Clickable : MonoBehaviour
     // object titled `Tracker Text (TMP)`.
     public static int Clicks = 0;
 
+    // Reference to the upgrade system to get click multipliers
+    private UpgradeSystem upgradeSystem;
+
+    void Start()
+    {
+        // Find the upgrade system in the scene
+        upgradeSystem = FindObjectOfType<UpgradeSystem>();
+    }
+
     /// <summary>
     /// This function is called when the mouse button clicks
     /// on this object.
     /// </summary>
     private void OnMouseDown()
     {
-        Clicks += 1;  // add one point
+        int clickValue = 1; // Base click value
+        
+        // Apply upgrade multipliers if upgrade system exists
+        if (upgradeSystem != null)
+        {
+            clickValue = upgradeSystem.GetTotalClickMultiplier();
+        }
+        
+        Clicks += clickValue;  // add points based on upgrades
     }
 
 }
