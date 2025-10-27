@@ -1110,7 +1110,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialStability: 100
-  dropAmount: 10
+  minDropAmount: 20
+  maxDropAmount: 60
+  dropProbability: 0.8
   spriteThresholds:
   - 80
   - 60
@@ -1120,12 +1122,17 @@ MonoBehaviour:
   stabilityText: {fileID: 40443461}
   stabilityBarFill: {fileID: 0}
   mainSpriteRenderer: {fileID: 2098029395}
+  eggSprite: {fileID: 0}
   stabilitySprites:
-  - {fileID: 21300000, guid: 21f42d25941e34932af3118834e8b89f, type: 3}
-  - {fileID: 21300000, guid: 9ed7e4844d17f403baa9e0a9c4b3763b, type: 3}
-  - {fileID: 21300000, guid: 21f42d25941e34932af3118834e8b89f, type: 3}
-  - {fileID: 21300000, guid: 9ed7e4844d17f403baa9e0a9c4b3763b, type: 3}
-  - {fileID: 21300000, guid: 21f42d25941e34932af3118834e8b89f, type: 3}
+  - {fileID: 21300000, guid: 72a79dce3b9c040e0adfaf3d527b5e8c, type: 3}
+  - {fileID: 21300000, guid: 67dfb4c0a6f1c4798921e26017f636a4, type: 3}
+  - {fileID: 21300000, guid: 788334b094b0d4e9098e9dfb10f9d4ad, type: 3}
+  - {fileID: 21300000, guid: b90d4750812b04ad49e22edce9a09a32, type: 3}
+  - {fileID: 21300000, guid: 6791fb77640ba4502a0298e7693bf73f, type: 3}
+  - {fileID: 21300000, guid: 81c94fe4414e042cc855428f6400cb85, type: 3}
+  gameOverSprite: {fileID: 21300000, guid: 46fe91cc554004770a623a3006e1ff3d, type: 3}
+  necrosisteenSprite: {fileID: 151542428, guid: 9be4f91e096814b07b66bd5596399266, type: 3}
+  pupilsfalloffSprite: {fileID: -873580577, guid: c9f7d8c9035c2401cb824c8549f590a1, type: 3}
   transitionSystem: {fileID: 0}
 --- !u!4 &576617268
 Transform:
