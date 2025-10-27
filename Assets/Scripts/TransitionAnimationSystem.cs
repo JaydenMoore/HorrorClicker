@@ -31,14 +31,71 @@ public class TransitionAnimationSystem : MonoBehaviour
     
     void Start()
     {
-        // Start with the first panel of the first transition animation
-        if (animation0 != null && animation0.Length > 0 && mainSpriteRenderer != null)
-        {
-            mainSpriteRenderer.sprite = animation0[0];
-        }
+        // DON'T set initial sprite here - let StabilitySystem handle it
+        // The StabilitySystem will set the correct initial sprite (egg)
         
         // Set initial game state to 0 (before first click)
         currentGameState = 0;
+    }
+    
+    /// <summary>
+    /// Triggers the egg breaking animation
+    /// </summary>
+    public void TriggerEggAnimation()
+    {
+        if (!isPlayingTransition)
+        {
+            StartCoroutine(PlayEggAnimation());
+        }
+    }
+    
+    /// <summary>
+    /// Plays the egg breaking animation sequence
+    /// </summary>
+    private IEnumerator PlayEggAnimation()
+    {
+        if (isPlayingTransition)
+            yield break;
+            
+        // Get the egg animation array (animation0)
+        if (animation0 == null || animation0.Length == 0)
+        {
+            yield break;
+        }
+            
+        isPlayingTransition = true;
+        
+        // Play the egg animation sequence
+        for (int i = 0; i < animation0.Length; i++)
+        {
+            if (mainSpriteRenderer != null && animation0[i] != null)
+            {
+                mainSpriteRenderer.sprite = animation0[i];
+            }
+            
+            yield return new WaitForSeconds(panelDuration);
+        }
+        
+        // After egg animation completes, transition to baby sprite
+        TransitionToBaby();
+        
+        isPlayingTransition = false;
+    }
+    
+    /// <summary>
+    /// Transitions to baby sprite after egg animation
+    /// </summary>
+    private void TransitionToBaby()
+    {
+        if (stabilitySystem != null && stabilitySystem.stabilitySprites != null && stabilitySystem.stabilitySprites.Length > 0)
+        {
+            // Set to baby sprite (index 0)
+            stabilitySystem.SetSpriteIndex(0);
+            if (mainSpriteRenderer != null && stabilitySystem.stabilitySprites[0] != null)
+            {
+                mainSpriteRenderer.sprite = stabilitySystem.stabilitySprites[0];
+            }
+        }
     }
     
     void Update()

@@ -28,6 +28,19 @@ public class Clickable : MonoBehaviour
     /// </summary>
     private void OnMouseDown()
     {
+        // Check if game is over (prevent clicking)
+        StabilitySystem stabilitySystem = FindObjectOfType<StabilitySystem>();
+        if (stabilitySystem != null && stabilitySystem.IsGameOver())
+        {
+            return; // Don't allow clicking when game is over
+        }
+        
+        // Check if this is the first click (egg breaking)
+        if (Clicks == 0 && stabilitySystem != null)
+        {
+            stabilitySystem.BreakEgg();
+        }
+        
         int clickValue = 1; // Base click value
         
         // Apply upgrade multipliers if upgrade system exists
