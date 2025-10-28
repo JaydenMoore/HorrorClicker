@@ -11,7 +11,7 @@ public class UpgradeSystem : MonoBehaviour
 {
     [Header("Upgrade Settings")]
     public int[] upgradeMilestones = { 100, 1000, 10000, 100000, 1000000 };
-    public int[] upgradeCosts = { 100, 100, 1000, 10000, 100000 };
+    public int[] upgradeCosts = { 100, 1000, 10000, 100000, 1000000 };
     public int[] clickMultipliers = { 10, 100, 1000, 10000, 100000 };
     
     [Header("UI References")]
@@ -70,6 +70,13 @@ public class UpgradeSystem : MonoBehaviour
             
             // Add to total multiplier
             totalClickMultiplier += clickMultipliers[upgradeIndex];
+            
+            // Trigger stability drop when upgrade is purchased
+            StabilitySystem stabilitySystem = FindObjectOfType<StabilitySystem>();
+            if (stabilitySystem != null)
+            {
+                stabilitySystem.TriggerUpgradeDrop();
+            }
             
             // Hide the button
             if (upgradeButtons[upgradeIndex] != null)

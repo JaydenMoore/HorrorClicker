@@ -27,12 +27,12 @@ public class ClickTracker : MonoBehaviour
     {
         // See how many clicks the player has, stored in the static
         // variable `Clickable.Clicks`.
-        string displayText = "Clicks: " + Clickable.Clicks;
+        string displayText = "Observations: " + Clickable.Clicks;
         
         // Add click multiplier info if upgrades are available
         if (upgradeSystem != null && upgradeSystem.GetTotalClickMultiplier() > 1)
         {
-            displayText += "\nMultiplier: x" + upgradeSystem.GetTotalClickMultiplier();
+            displayText += "\nResearching Efficiency: x" + upgradeSystem.GetTotalClickMultiplier();
         }
         
         _trackingText.text = displayText;

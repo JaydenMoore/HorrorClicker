@@ -12,8 +12,8 @@ public class StabilitySystem : MonoBehaviour
 {
     [Header("Stability Settings")]
     public float initialStability = 100f;
-    public float minDropAmount = 20f; // Minimum 20% drop
-    public float maxDropAmount = 60f; // Maximum 60% drop
+    public float minDropAmount = 15f; // Minimum 15% drop
+    public float maxDropAmount = 45f; // Maximum 45% drop
     public float dropProbability = 0.8f; // 80% chance to drop at each milestone
     
     [Header("Sprite Change Thresholds")]
@@ -29,8 +29,8 @@ public class StabilitySystem : MonoBehaviour
     public Sprite eggSprite; // Initial egg sprite that breaks on first click
     public Sprite[] stabilitySprites; // Placeholder sprites for different stability levels
     public Sprite gameOverSprite; // Sprite to show when stability reaches 0
-    public Sprite necrosisteenSprite; // Special sprite for necrosisteen stage
-    public Sprite pupilsfalloffSprite; // Special sprite for pupils fall off stage
+    public Sprite[] necrosisteenSprites; // Special sprites for necrosisteen stage progression (0-4)
+    public Sprite[] pupilsfalloffSprites; // Special sprites for pupils fall off stage progression (0-4)
     public TransitionAnimationSystem transitionSystem; // Reference to transition animation system
     
     // Current stability value
@@ -38,16 +38,23 @@ public class StabilitySystem : MonoBehaviour
     private int lastMilestoneReached = 0;
     private int currentSpriteIndex = 0;
     private bool isGameOver = false;
-    private bool hasTriggeredSpecialStage = false; // Prevent multiple special stage triggers
+    private string specialStageType = ""; // Track which special stage we're in ("necrosisteen", "pupilsfalloff", or "")
+    private int specialStageIndex = 0; // Track progression within special stage (0-4)
     private bool hasInitialized = false; // Prevent sprite changes during initialization
     private bool hasEggBroken = false; // Track if egg has been broken
+    private bool hasReachedFirstMilestone = false; // Track if we've ever reached 100 clicks
     
     // Wavering animation
     private bool isWavering = false;
     private Vector3 originalBarPosition;
+    private Vector3 originalSpritePosition;
     private float waverIntensity = 5f; // Increased for more dramatic effect
     private float waverSpeed = 15f; // Faster wobbling
     private float wobbleRange = 3f; // How much the stability value wobbles (reduced for subtle effect)
+    
+    // Sprite bobble animation
+    private float spriteBobbleIntensity = 0.05f; // Subtle bobble effect
+    private float spriteBobbleSpeed = 3f; // Slower than stability bar
     
     void Start()
     {
@@ -64,6 +71,7 @@ public class StabilitySystem : MonoBehaviour
         if (mainSpriteRenderer != null)
         {
             mainSpriteRenderer.transform.localScale = new Vector3(0.7f, 0.7f, 1f); // Scale down to 70%
+            originalSpritePosition = mainSpriteRenderer.transform.position;
         }
         
         // Set initial sprite to EGG (not baby!)
@@ -86,7 +94,7 @@ public class StabilitySystem : MonoBehaviour
     void Update()
     {
         // Force stability to 100% until egg is broken and first milestone reached
-        if (!hasEggBroken || Clickable.Clicks < 100)
+        if (!hasEggBroken || !hasReachedFirstMilestone)
         {
             if (currentStability != initialStability)
             {
@@ -95,8 +103,14 @@ public class StabilitySystem : MonoBehaviour
             }
         }
         
-        CheckForMilestoneDrops();
+        // Track if we've ever reached the first milestone
+        if (Clickable.Clicks >= 100 && !hasReachedFirstMilestone)
+        {
+            hasReachedFirstMilestone = true;
+        }
+        
         UpdateWaveringAnimation();
+        UpdateSpriteBobble();
     }
     
     void LateUpdate()
@@ -177,39 +191,74 @@ public class StabilitySystem : MonoBehaviour
     }
     
     /// <summary>
-    /// Triggers a special branching stage that leads to game over
+    /// Called by UpgradeSystem when an upgrade is purchased
+    /// </summary>
+    public void TriggerUpgradeDrop()
+    {
+        // Only drop stability if egg has broken and first milestone reached
+        if (hasEggBroken && hasReachedFirstMilestone && !isGameOver)
+        {
+            // Apply the drop probability (80% chance to drop)
+            if (Random.Range(0f, 1f) <= dropProbability)
+            {
+                DropStability();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Triggers a special branching stage that plays an animation sequence
     /// </summary>
     private void TriggerSpecialStage(string stageType)
     {
-        hasTriggeredSpecialStage = true;
-        isGameOver = true;
+        specialStageType = stageType;
+        specialStageIndex = 0;
         
-        // Set the appropriate special sprite
-        if (mainSpriteRenderer != null)
+        // Start the special stage animation sequence
+        StartCoroutine(PlaySpecialStageAnimation(stageType));
+    }
+    
+    /// <summary>
+    /// Plays the special stage animation sequence (like egg hatching)
+    /// </summary>
+    private IEnumerator PlaySpecialStageAnimation(string stageType)
+    {
+        Sprite[] animationSprites = null;
+        
+        // Get the appropriate sprite array
+        if (stageType == "necrosisteen" && necrosisteenSprites != null)
         {
-            if (stageType == "necrosisteen" && necrosisteenSprite != null)
-            {
-                mainSpriteRenderer.sprite = necrosisteenSprite;
-            }
-            else if (stageType == "pupilsfalloff" && pupilsfalloffSprite != null)
-            {
-                mainSpriteRenderer.sprite = pupilsfalloffSprite;
-            }
-            else
-            {
-                // Fallback to regular game over sprite
-                if (gameOverSprite != null)
-                {
-                    mainSpriteRenderer.sprite = gameOverSprite;
-                }
-            }
+            animationSprites = necrosisteenSprites;
+        }
+        else if (stageType == "pupilsfalloff" && pupilsfalloffSprites != null)
+        {
+            animationSprites = pupilsfalloffSprites;
         }
         
-        // Stop wavering animation
-        isWavering = false;
+        if (animationSprites == null || animationSprites.Length == 0)
+        {
+            yield break;
+        }
         
-        // You could add additional special stage effects here
-        // For example: play special sound effects, trigger special animations, etc.
+        // Play through each sprite in the animation
+        for (int i = 0; i < animationSprites.Length; i++)
+        {
+            if (mainSpriteRenderer != null && animationSprites[i] != null)
+            {
+                mainSpriteRenderer.sprite = animationSprites[i];
+                specialStageIndex = i;
+            }
+            
+            // Wait before showing next sprite (0.5 seconds like egg animation)
+            yield return new WaitForSeconds(0.5f);
+        }
+        
+        // After animation completes, check if we should trigger game over
+        if (specialStageIndex >= animationSprites.Length - 1)
+        {
+            // Reached the end of special stage progression - trigger game over
+            TriggerGameOver();
+        }
     }
     
     /// <summary>
@@ -280,12 +329,14 @@ public class StabilitySystem : MonoBehaviour
     private void CheckForSpriteChange()
     {
         // Don't change sprites if game is over, not initialized, egg hasn't broken, or haven't reached first milestone
-        if (isGameOver || !hasInitialized || !hasEggBroken || Clickable.Clicks < 100) return;
+        if (isGameOver || !hasInitialized || !hasEggBroken || !hasReachedFirstMilestone) return;
         
         int newSpriteIndex = GetSpriteIndexForStability(currentStability);
         
+        Debug.Log($"CheckForSpriteChange: currentStability={currentStability}, newSpriteIndex={newSpriteIndex}, currentSpriteIndex={currentSpriteIndex}");
+        
         // Check for special branching stages before normal sprite change
-        if (!hasTriggeredSpecialStage)
+        if (string.IsNullOrEmpty(specialStageType))
         {
             // Check for necrosisteen stage (teen stage - sprite index 3: goodendingteen)
             if (newSpriteIndex == 3 && Random.Range(0f, 1f) <= 0.5f)
@@ -301,6 +352,11 @@ public class StabilitySystem : MonoBehaviour
                 return;
             }
         }
+        else
+        {
+            // We're in a special stage - don't allow normal sprite changes
+            return;
+        }
         
         // Add bounds checking to prevent index out of range errors
         if (newSpriteIndex != currentSpriteIndex && 
@@ -309,7 +365,9 @@ public class StabilitySystem : MonoBehaviour
             stabilitySprites != null && 
             stabilitySprites.Length > 0)
         {
-        currentSpriteIndex = newSpriteIndex;
+            currentSpriteIndex = newSpriteIndex;
+            
+            Debug.Log($"Changing sprite to index {newSpriteIndex}");
             
             // Use transition system if available, otherwise use direct sprite change
             if (transitionSystem != null)
@@ -323,6 +381,7 @@ public class StabilitySystem : MonoBehaviour
             else if (mainSpriteRenderer != null && stabilitySprites[currentSpriteIndex] != null)
             {
                 mainSpriteRenderer.sprite = stabilitySprites[currentSpriteIndex];
+                Debug.Log($"Set sprite directly to {stabilitySprites[currentSpriteIndex].name}");
             }
         }
     }
@@ -332,14 +391,17 @@ public class StabilitySystem : MonoBehaviour
     /// </summary>
     private int GetSpriteIndexForStability(float stability)
     {
-        for (int i = 0; i < spriteThresholds.Length; i++)
-        {
-            if (stability < spriteThresholds[i])
-            {
-                return i + 1; // Return index 1, 2, 3, 4, 5 for thresholds
-            }
-        }
-        return 0; // Default sprite (full stability)
+        // Check thresholds from lowest to highest to find the correct sprite
+        // Thresholds: [80, 60, 40, 20, 10]
+        // Sprite indices: 0=baby, 1=toddler, 2=child, 3=teen, 4=adult, 5=elderly
+        
+        if (stability < spriteThresholds[4]) return 5; // Below 10% - elderly
+        if (stability < spriteThresholds[3]) return 4; // Below 20% - adult
+        if (stability < spriteThresholds[2]) return 3; // Below 40% - teen
+        if (stability < spriteThresholds[1]) return 2; // Below 60% - child
+        if (stability < spriteThresholds[0]) return 1; // Below 80% - toddler
+        
+        return 0; // 80% or above - baby
     }
     
     /// <summary>
@@ -399,6 +461,27 @@ public class StabilitySystem : MonoBehaviour
     }
     
     /// <summary>
+    /// Handles the subtle bobble animation for the main sprite
+    /// </summary>
+    private void UpdateSpriteBobble()
+    {
+        if (mainSpriteRenderer != null && !isGameOver)
+        {
+            // Create a gentle bobbing motion using sine and cosine waves
+            float bobbleX = Mathf.Sin(Time.time * spriteBobbleSpeed) * spriteBobbleIntensity;
+            float bobbleY = Mathf.Cos(Time.time * spriteBobbleSpeed * 0.8f) * spriteBobbleIntensity * 0.6f;
+            
+            // Apply the bobble offset to the original position
+            mainSpriteRenderer.transform.position = originalSpritePosition + new Vector3(bobbleX, bobbleY, 0);
+        }
+        else if (isGameOver && mainSpriteRenderer != null)
+        {
+            // Reset to original position when game is over
+            mainSpriteRenderer.transform.position = originalSpritePosition;
+        }
+    }
+    
+    /// <summary>
     /// Gets the current stability percentage
     /// </summary>
     public float GetCurrentStability()
@@ -432,9 +515,11 @@ public class StabilitySystem : MonoBehaviour
         currentSpriteIndex = -1; // Reset to egg state
         isGameOver = false;
         isWavering = false;
-        hasTriggeredSpecialStage = false;
+        specialStageType = "";
+        specialStageIndex = 0;
         hasInitialized = false;
         hasEggBroken = false; // Reset egg state
+        hasReachedFirstMilestone = false; // Reset milestone tracker
         
         // Reset stability bar position
         if (stabilityBar != null)
